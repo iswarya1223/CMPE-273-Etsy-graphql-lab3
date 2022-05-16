@@ -2,19 +2,22 @@ const express = require('express');
 const router = express.Router();
 const session = require('express-session');
 var mysql = require('mysql');
-
+//var constraints = require("../../config.json");
 var cors = require('cors');
 const {check, validationResult} = require('express-validator');
-
+//const app = express();
 router.use(cors());
-var kafka = require('../../kafka/client');
+
 const User = require('../../models/User');
 const e = require('express');
-
+//const ApiFeatures = require("../utils/apifeatures");
 router.use(express.urlencoded({extended: true}));
 router.use(express.json())
 var Category=require('../../models/Category');
+//app.use(express.json({extended: false}));
 
+//For route use  GET api/users
+//router.get('/',(req,res) => res.send('User Route'));
 
 
 
@@ -47,11 +50,11 @@ router.post('/uniqueshopname', [
   router.post('/createshop', [
     check('shopname', 'shop name is required').not().isEmpty(),
   ], async (req,res) => {
-     
+      //console.log("shop data",req.body);
       const errors = validationResult(req);
-
+      //console.log(errors);
       if(!errors.isEmpty()){
- 
+      //res.send(errors.code);
       return res.status(500).json({errors: errors.array()});
       }
       kafka.make_request('createshopname',req.body, function(err,results){
@@ -101,11 +104,11 @@ router.post('/createproduct', [
           const errors = validationResult(req);
           console.log(errors);
           if(!errors.isEmpty()){
-
+          //res.send(errors.code);
           return res.status(500).json({errors: errors.array()});
           }
           kafka.make_request('createproducts',req.body, function(err,results){
-         
+            // console.log(results);
                    if(results.status === 400 || results.status === 500 ){
                      res.status(results.status).json(results.message);
                       }
@@ -180,16 +183,21 @@ router.post('/saveshopimage', [
 ], async (req,res) => {
     console.log(req.body);
     const {shopname} = req.body;
-    kafka.make_request('getshopcategories',req.body, function(err,results){
-        // console.log(results);
-               if(results.status === 500 || results.status === 400){
-                 res.status(results.status).json(results.message);
-                  }
-                  
-                  else{
-                     res.status(results.status).json(results.message);
-                 }
-              }); 
+    try{  
+        let results = await Category.find({ $or :[{shopname:shopname} , {shopname : "NULL"}] })
+                  if(results.length === 0){
+                        res.json({success:false})
+                         //res.status(400).json({success: false});
+                     }else{
+                         //res.end(JSON.stringify(results));
+                         res.json({success:true,results})
+                     }
+                
+            }      
+    
+catch (err) {
+    res.json(err)
+}
  
    }
    );
@@ -197,17 +205,22 @@ router.post('/shopcategory', [
     
 ], async (req,res) => {
     console.log(req.body);
+   
     const {shopname,category} = req.body;
-    kafka.make_request('addshopcategory',req.body, function(err,results){
-        // console.log(results);
-               if(results.status === 500 ){
-                 res.status(results.status).json(results.message);
-                  }
-                  
-                  else{
-                     res.status(results.status).json(results.message);
-                 }
-              }); 
+    try{  
+
+        let categories =[]
+        categories = new Category({
+            shopname,
+            category,
+          });
+    
+          await categories.save();
+                res.json({success:true})
+            }      
+catch (err) {
+    res.json(err)
+}
  
    }
    );

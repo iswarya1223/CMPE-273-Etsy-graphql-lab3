@@ -9,6 +9,9 @@ var multer =require('multer');
 app.use(cors());
 //require('../Utils/passport');
 //app.get('/',(req,res) => res.send('API Running'));
+const typeDefs=require('./Graphql/typeDefs')
+const resolvers=require('./Graphql/resolvers')
+var { graphqlHTTP } = require('express-graphql');
 
 const connectDB = require('./config/db');
 const path = require('path');
@@ -35,33 +38,17 @@ var connection = mysql.createPool({
 app.use(express.static(__dirname + '/public'));
 
 
-
-// app.post('/create',async function(req,res){
-//     await connection.query(`Insert into test_table(uname,email,password)values(?,?,?)`,[req.body.uname,
-//         request.body.email,request.body.password], async function(error,results){
-//         if(error){
-//             res.writeHead(200, {
-//                 'Content-Type': 'text-plain'
-//             });
-//             res.send(error.code);
-//         }else{
-//             res.writeHead(200,{
-//                 'Content-Type': 'text/plain'
-//             });
-//             res.end(JSON.stringify(results));
-//         }
-//     });
-//     res.send(req.body);
-// });
-
-
 //Defining Routes
 app.use('/api/users', require('./routes/api/users'));
 app.use('/api/auth', require('./routes/api/auth'));
 app.use('/api/profile', require('./routes/api/profile'));
 app.use('/api/posts', require('./routes/api/posts'));
 app.use('/api/shopname', require('./routes/api/shopname'));
-
+app.use('/graphql',graphqlHTTP({
+  schema: typeDefs,
+  rootValue: resolvers,
+  graphiql: true,
+}));
 
 app.get('*', function (req, res) {
     res.sendFile(`${__dirname}/public/index.html`, (err) => {

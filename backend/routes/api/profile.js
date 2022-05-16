@@ -2,24 +2,33 @@ const express = require('express');
 const router = express.Router();
 const session = require('express-session');
 var mysql = require('mysql');
-
+//var constraints = require("../../config.json");
 var cors = require('cors');
 const {check, validationResult} = require('express-validator');
-
+//const app = express();
 router.use(cors());
-var kafka = require('../../kafka/client');
+const Favourite = require('../../models/Favourite');
 const User = require('../../models/User');
 const Cart = require('../../models/Cart');
-const e = require('express');
+const product = require("../../models/productModel");
 
+const e = require('express');
+//const ApiFeatures = require("../utils/apifeatures");
 router.use(express.urlencoded({extended: true}));
 router.use(express.json())
 const connectDB = require('../../config/db');
-
+//var User =require('../../models/User');
 const config = require('config');
 connectDB();
 const {checkAuth} = require("../../utils/passport");
 
+//app.use(express.json({extended: false}));
+
+//For route use  GET api/users
+//router.get('/',(req,res) => res.send('User Route'));
+
+
+//For route use  GET api/profile
 
 router.post('/me',(req,res) => {
     console.log("hi");
@@ -46,7 +55,7 @@ catch(err){
 
 router.post('/changeprofile'
   , async (req,res) => {
-
+    //console.log(req.body);
     const {email,uname,city,gender,dateofbirth,mobile,address,country,picture} = req.body;
     kafka.make_request('updateuserprofile',req.body, function(err,results){
         // console.log(results);
@@ -66,7 +75,7 @@ router.post('/changeprofile'
   , async (req,res) => {
     console.log(req.body);
     kafka.make_request('addgiftop',req.body, function(err,results){
-     
+        // console.log(results);
                if(results.status === 400 || results.status === 500 ){
                  res.status(results.status).json(results.message);
                   }
@@ -185,6 +194,7 @@ router.post('/deletefromcart'
 });
 
 //my cart details
+/*
 router.post('/getCartDetails'
   , async (req,res) => {
     console.log("email details",req.body);
@@ -201,8 +211,9 @@ router.post('/getCartDetails'
              }); 
 }
 );
-
+*/
 // creating a order id in orders table after paying for products in the cart.
+/*
 router.post('/orders'
   , async (req,res) => {
     console.log("emails is",req.body);
@@ -219,8 +230,8 @@ router.post('/orders'
              }); 
 }
 );
-
-
+*/
+/*
 // fetching the orders made by a particular end user.
 router.post('/mypurchases'
   , async (req,res) => {
@@ -237,7 +248,7 @@ router.post('/mypurchases'
          }); 
 }
 );
-
+*/
 router.post('/addfavourite', [
 ], async (req,res) => {
     //console.log(req.body);
@@ -246,17 +257,23 @@ router.post('/addfavourite', [
     if(!errors.isEmpty()){
     //res.send(errors.code);
     return res.status(500).json({errors: errors.array()});
-    }
-    kafka.make_request('addfavproducts',req.body, function(err,results){
-        console.log(results)
-        if(results.status=== 500){
-            res.send("database error");
-        }
-        if(results.status=== 200){
-            res.status(200).json("success");
-        }
-        
-    }); 
+    }      
+    const {product,email}  = req.body;
+
+    try {
+        let favorite = await Favourite.find();
+        favorite = new Favourite({
+         email,
+         product
+         
+       });
+
+       await favorite.save();
+            res.json({success:true})
+   
+} catch (err) {
+   res.json(err)
+}
   
 }
 );
@@ -270,16 +287,59 @@ router.post('/getfavourite', [
     //res.send(errors.code);
     return res.status(500).json({errors: errors.array()});
     }
-    kafka.make_request('getfavproducts',req.body, function(err,results){
-        console.log(results);
-              if(err){
-                res.status(results.status).json(results.message);
-                 }
-                 
-                 else{
-                    res.status(200).json(results);
-                }
-             }); 
+    try{  
+      var {favkeyword,email}=req.body
+  if (favkeyword === "undefined") {
+      var favkeyword= ''
+  }
+      let query = [
+          {
+              $lookup:
+              {
+                  from:"products",
+                  localField: "product",
+                  foreignField : "_id",
+                  as: "productdetails"
+              }
+          },
+          {$unwind: '$productdetails'},
+      ];
+      if (favkeyword && favkeyword!='')
+      {
+          query.push({
+              $match: {
+                  $and : [
+                      {
+                          'productdetails.productname' : {$regex: favkeyword,$options: "i"}
+                      },
+                      {
+                          email
+                      }
+                  ]
+              }
+          });
+      }
+      else
+      {
+          query.push({
+              $match: {
+                  $and : [
+                      {
+                          email
+                      }
+                  ]
+              }
+          });
+      }
+      let favorites = await Favourite.aggregate(query);
+   
+      
+      res.json({success:true, favorites});
+
+                   }    
+       catch (err) {
+      res.json(err)
+  } 
 }
 );
 
@@ -293,16 +353,23 @@ router.post('/deletefavourite', [
     return res.status(500).json({errors: errors.array()});
     }
 
-    kafka.make_request('deletefavproducts',req.body, function(err,results){
-        console.log(results);
-              if(results.status===400 || results.status===500){
-                res.status(results.status).json(results.message);
-                 }
-                 
-                 if (results.status===200) {
-                    res.status(200).json({success:true});
-                }
-             });    
+    const {product,email}  = req.body;
+    try {
+        Favourite.deleteOne({ email: email,product:product },  function(error,results){
+            if(error){
+              res.json({success:false})
+               }
+               
+               if (results.deletedCount === 0) {
+                res.send("favorite item doesn't exist")
+              }else{
+                res.json({success:true})
+               }
+           });
+   
+} catch (err) {
+ res.json(err)
+}  
 
 }
 );
