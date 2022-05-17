@@ -5,25 +5,21 @@ import {
     ORDER_DETAILS_SUCCESS
   } from "../constants/orderConstants";
 import axios from "axios";
-  
+import {ADD_ORDER} from "../mutation";
+import {GET_ORDER_DETAILS} from "../queries"
   // Adding the productdetails to Cart
   export const addOrderDetails = (email,totalprice)  => async (dispatch) => {
-    
-    const config = {
-      headers: {
-          'Content-Type': 'application/json'
-      }
-  }
-    const body = {
+    const query = ADD_ORDER
+    const variables = {
       email : email,
       totalprice:totalprice
     }
-    const body1 = JSON.stringify(body);
-    const {data} = await axios.post("/api/profile/orders/",body1,config);;
+   
+    const {data} = await axios.post("/graphql",{query,variables});;
   
     dispatch({
       type: ADD_ORDER_DETAILS,
-      payload: data,
+      payload: data.data.addorder,
     });
   };
 
@@ -31,27 +27,21 @@ import axios from "axios";
   export const getOrderDetails = (email,resultsperpage,currentPage)  => async (dispatch) => {
     console.log('check');
     try {
-    const config = {
-      headers: {
-          'Content-Type': 'application/json'
-      }
-  }
-    const body = {
+    const query = GET_ORDER_DETAILS
+    const variables = {
       email : email,
       resultsperpage : resultsperpage,
       currentPage: currentPage
     }
-    console.log(body);
     dispatch({
       type: ORDER_DETAILS_REQUEST,
     })
-    const body1 = JSON.stringify(body);
-    const {data} = await axios.post("/api/profile/mypurchases/",body1,config);
+    const {data} = await axios.post("/graphql",{query,variables});
   
     dispatch({
       type: ORDER_DETAILS_SUCCESS,
-      payload: data.results,
-      payload1: data.ordersCount
+      payload: data.data.getorderdetails.results,
+      payload1: data.data.getorderdetails.ordersCount
     });
   }
     catch (error) {
