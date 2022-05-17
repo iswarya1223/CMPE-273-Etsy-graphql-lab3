@@ -24,27 +24,34 @@ import {
     GET_CATEGORY_FAIL,
 
 } from "../constants/shopConstants";
-
+import {GET_SHOP_AVAILABILITY} from "../queries";
+import {GET_SHOP_DETAILS} from "../queries";
+import {CREATE_PRODUCT} from "../mutation";
+import { UPDATE_PRODUCT } from "../mutation";
+import { DELETE_SHOP_PRODUCT } from "../mutation";
+import { SAVE_IMAGE } from "../mutation";
+import {CREATE_SHOP} from "../mutation";
 // chekcing the shopname is created or not
 export const getShopAvailability =
   (keyword) =>
   async (dispatch) => {
     try {
+      const query = GET_SHOP_AVAILABILITY
       dispatch({ type: SHOP_NAME_REQUEST });
-      const body = {
+      const variables = {
           shopname : keyword
       }
-      const {data} = await axios.post('/api/shopname/uniqueshopname',body);
-      console.log("received data" + data.success);
-      if (data.success) {
+      const {data} = await axios.post('/graphql',{query,variables});
+   
+      if (data.data.shopavailability.success) {
         dispatch({
           type: SHOP_NAME_SUCCESS,
-          payload: data.success,
+          payload: data.data.shopavailability.success,
         });
       } else {
         dispatch({
           type: SHOP_NAME_FAIL,
-          payload: data.success
+          payload: data.data.shopavailability.success
         });
       }
     } catch (error) {
@@ -58,17 +65,17 @@ export const getShopAvailability =
   (keyword,email) =>
   async (dispatch) => {
     try {
+      const query = CREATE_SHOP;
       dispatch({ type: CREATE_SHOP_REQUEST });
-      const body = {
+      const variables = {
           shopname : keyword,
           email : email
       }
-      console.log(body);
-      const {data} = await axios.post('/api/shopname/createshop',body);
-      console.log("received data" + data.success);
+     
+      const {data} = await axios.post('/graphql',{query,variables});
       dispatch({
         type: CREATE_SHOP_SUCCESS,
-        payload: data.success,
+        payload: data.data.createshop.success,
       });
     } catch (error) {
       dispatch({
@@ -82,16 +89,18 @@ export const getShopAvailability =
   export const getShopDetails = (shopname) => async (dispatch) => {
     //const body = JSON.stringify({productid});
     try {
+      const query = GET_SHOP_DETAILS;
+      const variables = {shopname:shopname}
       dispatch({ type: SHOP_DETAILS_REQUEST });
       console.log("action shop",shopname);
-      const {data} = await axios.get("/api/shopname/getShopDetails/"+shopname);
+      const {data} = await axios.post("/graphql",{query,variables});
 
       dispatch({
         
         type: SHOP_DETAILS_SUCCESS,
-        payload: data.results,
-        payload2 :data.shopdetails,
-        payload1: data.totalsalesrevenue, 
+        payload: data.data.getshopdetails.results,
+        payload2 :data.data.getshopdetails.shopdetails,
+        payload1: data.data.getshopdetails.totalsalesrevenue, 
       });
     } catch (error) {
       dispatch({
@@ -105,10 +114,10 @@ export const getShopAvailability =
 
   export const createProduct = (productname,description,price,stock,currency,category,image_URL,shopname) => async (dispatch) => {
     try {
+      const query = CREATE_PRODUCT
       dispatch({ type: CREATE_PRODUCT_REQUEST });
   
-      const config = { headers: {  'Content-Type': 'application/json'} };
-      const productData = {
+      const variables = {
         productname : productname,
         description : description,
         price : price,
@@ -118,10 +127,10 @@ export const getShopAvailability =
         image_URL : image_URL ,
         shopname :shopname,
       }
-      console.log(productData);
-      const { data } = await axios.post(`/api/shopname/createproduct`, productData, config);
+   
+      const { data } = await axios.post("/graphql", {query,variables});
   
-      dispatch({ type: CREATE_PRODUCT_SUCCESS, payload: data.success });
+      dispatch({ type: CREATE_PRODUCT_SUCCESS, payload: data.data.createproduct.success });
     } catch (error) {
       dispatch({
         type: CREATE_PRODUCT_FAIL,
@@ -132,10 +141,11 @@ export const getShopAvailability =
 
   export const updateProduct = (productid,productname,description,price,stock,currency,category,image_URL) => async (dispatch) => {
     try {
+      const query = UPDATE_PRODUCT
       dispatch({ type: UPDATE_PRODUCT_REQUEST });
   
-      const config = { headers: {  'Content-Type': 'application/json'} };
-      const productData = {
+      const variables = {
+        _id:productid,
         productname : productname,
         description : description,
         price : price,
@@ -144,10 +154,10 @@ export const getShopAvailability =
       category :category,
         image_URL : image_URL ,
       }
-      console.log(productData);
-      const { data } = await axios.post(`/api/shopname/updateproduct/`+productid, productData, config);
+      
+      const { data } = await axios.post("/graphql", {query,variables});
   
-      dispatch({ type: UPDATE_PRODUCT_SUCCESS, payload: data.success });
+      dispatch({ type: UPDATE_PRODUCT_SUCCESS, payload: data.data.updateproduct.success });
     } catch (error) {
       dispatch({
         type: UPDATE_PRODUCT_FAIL,
@@ -157,41 +167,32 @@ export const getShopAvailability =
   };
 
   export const DeleteProduct = (productid) => async (dispatch) => {
-    const config = {
-      headers: {
-          'Content-Type': 'application/json'
-      }
-  }
-    const body = {
+    const query = DELETE_SHOP_PRODUCT
+    const variables = {
       _id :productid,
       product :productid,
     }
-    const body1 = JSON.stringify(body);
-    console.log(body1);
-    const {data} = await axios.post("/api/shopname/deleteproductfromshop/",body,config);;
+  
+    const {data} = await axios.post("/graphql",{query,variables});;
     dispatch({
       type: DELETE_PRODUCT,
-      payload: data.success,
+      payload: data.data.deleteproduct.success,
     });
   };
 
 
   export const saveShopImage = (shopimage,email) => async (dispatch) => {
-    const config = {
-      headers: {
-          'Content-Type': 'application/json'
-      }
-  }
-    const body = {
+    
+    const query = SAVE_IMAGE;
+    const variables = {
       shopimage :shopimage,
       email:email,
     }
-    const body1 = JSON.stringify(body);
-    console.log(body1);
-    const {data} = await axios.post("/api/shopname/saveshopimage/",body,config);
+  
+    const {data} = await axios.post("/graphql",{query,variables});
       dispatch({
         type: SAVE_SHOP_IMAGE,
-        payload: data.success,
+        payload: data.data.saveshopimage.success,
       });
     };
 
