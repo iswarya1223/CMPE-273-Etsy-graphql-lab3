@@ -18,7 +18,7 @@ export const Mypurchases = ({history}) =>
     const {user} = useSelector((state)=> state.auth);
     const {orderItems,ordersCount} = useSelector((state) => state.getorder);
     const email = user && user.length && user[0].email;
-    const [resultsperpage,setResultsPerPage] = useState(5);
+    const [resultsperpage,setResultsPerPage] = useState("5");
     const [currentPage, setCurrentPage] = useState(1);
     const dispatch = useDispatch();
     const alert = useAlert();
@@ -68,12 +68,12 @@ return (
                             </ListGroup.Item> : ''
                           }
                           {item.orderdetails && item.orderdetails.map(orderdetail => 
-                            <ListGroup.Item key={orderdetail.product}>
+                            <ListGroup.Item key={orderdetail.product._id}>
                                 <Row style={{textAlign: 'center'}}>
                                     <Col xs={2}  style={{cursor: 'pointer'}}>
                                         <Image src={orderdetail.image_URL} style={{objectFit: 'cover', width: '50px', height: '50px', marginLeft: 'auto', marginRight: 'auto', display: 'block'}} />
                                     </Col>
-                                    <Col xs={2}><Link style={{color:'black'}} to ={`/product/${orderdetail.product}`}>{orderdetail.productname}</Link></Col>
+                                    <Col xs={2}><Link style={{color:'black'}} to ={`/product/${orderdetail.product._id}`}>{orderdetail.productname}</Link></Col>
                                     {orderdetail && orderdetail.giftoption === true ? 
                                     <Col xs={4} style={{color:'tomato'}}>This product wrapped as a gift <br></br> Giftmessage : {orderdetail.giftdescription} </Col> :
                                     <Col xs={4} style={{color:'black'}}>N/A</Col>}
@@ -94,9 +94,9 @@ return (
   name='orderperpage'
   onChange={(e) => setResultsPerPageNo(e)}>
   <option value="null">Selectordersperpage</option>
-  <option value="2">2</option>
-  <option value="5">5</option>
-  <option value="10">10</option>
+  <option value='2'>2</option>
+  <option value='5'>5</option>
+  <option value='10'>10</option>
 </select>
 </div>
          {resultsperpage < ordersCount && (

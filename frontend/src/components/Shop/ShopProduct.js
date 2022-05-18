@@ -187,7 +187,7 @@ const ShopProduct= ({shopproduct,history,shopname}) => {
                   </div>
                   <div className="stock">
                     <input
-                      type="number"
+                      type="text"
                       placeholder="Product Quantity"
                       value={stock}
                       name='stock'
